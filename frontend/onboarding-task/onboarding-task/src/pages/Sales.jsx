@@ -1,0 +1,163 @@
+import  { useState, useEffect } from 'react';
+import DataTable from '../components/DataTable';
+import CreateUpdatePopup from '../components/CreateUpdatePopup';
+import MakeSurePopup from '../components/MakeSurePopup';
+import { Button } from 'semantic-ui-react';
+import { addSale, deleteSale, editSale, getAllSales, getSale } from '../services/SalesService';
+import { getAllCustomer } from '../services/CustomerService';
+import { getAllProducts } from '../services/ProductService';
+import { getAllStores } from '../services/StoreService';
+
+function Sales() {
+
+    const [makeSurePopup, setMakeSurePopup] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
+    const [dataTableData, setDataTableData] = useState([]);
+    const [dataToEdit, setDataToEdit] = useState(undefined);
+    const [openCreateUpdatePopup, setOpenCreateUpdatePopup] = useState(false);
+
+    const [customerDropdownSource, setCustomerDropdownSource] = useState([]);
+    const [productDropdownSource, setProductDropdownSource] = useState([]);
+    const [storeDropdownSource, setStoreDropdownSource] = useState([]);
+ 
+    useEffect(() => {
+        loadSale();
+        loadDropdownSources();
+      }, []);
+
+
+    const loadDropdownSources = async () => {
+        const customers = await getAllCustomer();
+        const products = await getAllProducts();
+        const stores = await getAllStores();
+
+        setCustomerDropdownSource(formatDropdownSource(customers));
+        setProductDropdownSource(formatDropdownSource(products));
+        setStoreDropdownSource(formatDropdownSource(stores));
+    };
+
+
+    const formatDropdownSource = (items) =>
+        items.map((item) => ({
+        key: item.id,
+        text: item.name,
+        value: item.id,
+        }));
+        
+    const loadSale = async () => {
+        const sales = await getAllSales();
+
+        const tableData = sales.map((s) => ({
+          ...s,
+          customer: s.customerName,
+          product: s.productName,
+          store: s.storeName,
+          dateSold: s.dateSold.split('T')[0],
+        }));
+        setDataTableData(tableData);
+      };
+    
+    const toggleCreateUpdatePopup = () => {
+        setOpenCreateUpdatePopup(!openCreateUpdatePopup);
+    };
+
+    const onCreateButtonClick = () => {
+        setDataToEdit(undefined);
+        setOpenCreateUpdatePopup(true);
+      };
+
+    const CreateUpdatePopupSubmit = async (formObject, isUpdate) => {
+        if (isUpdate) {
+            const response = await editSale(formObject.id, formObject);
+            if (response === false) return false;
+            await loadProduct();
+            return true;
+        } else {
+            const response = await addSale(formObject);
+            if (response === false) return false;
+            await loadSale();
+            return true;
+        }
+    };
+
+    const onEditDataTable = async (id) => {
+        const sale = await getSale(id);
+        sale.dateSold = sale.dateSold.split('T')[0];
+        setDataToEdit(sale);
+        setOpenCreateUpdatePopup(true);
+      };
+
+    const onDeleteDataTable = (id) => {
+        setMakeSurePopup(true);
+        setSelectedId(id);
+      };
+
+    const onDeleteConfirmed = async () => {
+        await deleteSale(selectedId);
+        setMakeSurePopup(false);
+        setSelectedId(null);
+        await loadSale();
+      };
+
+    const dataTableColumns = [
+        { header: 'Product', accessor: 'product' },
+        { header: 'Customer', accessor: 'customer' },
+        { header: 'Store', accessor: 'store' },
+        { header: 'Date Sold', accessor: 'dateSold' },
+      ];
+
+    const createUpdatePopupFields = [
+        {
+          name: 'productId',
+          label: 'Product',
+          placeholder: 'Select a product',
+          type: 'dropdown',
+          options: productDropdownSource,
+        },
+        {
+          name: 'customerId',
+          label: 'Customer',
+          placeholder: 'Select a customer',
+          type: 'dropdown',
+          options: customerDropdownSource,
+        },
+        {
+          name: 'storeId',
+          label: 'Store',
+          placeholder: 'Select a store',
+          type: 'dropdown',
+          options: storeDropdownSource,
+        },
+        { name: 'dateSold', label: 'Date Sold', placeholder: 'Enter date sold', type: 'date' },
+      ];
+
+
+    return (
+        <>
+          <Button color="blue" onClick={onCreateButtonClick}>
+            Create Sale
+          </Button>
+          <MakeSurePopup
+            open={makeSurePopup}
+            setOpenState={setMakeSurePopup}
+            onDelete={onDeleteConfirmed}
+          />
+          <CreateUpdatePopup
+            open={openCreateUpdatePopup}
+            onClose={toggleCreateUpdatePopup}
+            data={dataToEdit}
+            formFields={createUpdatePopupFields}
+            onSubmit={CreateUpdatePopupSubmit}
+          />
+          <DataTable
+            data={dataTableData}
+            columns={dataTableColumns}
+            onEdit={onEditDataTable}
+            onDelete={onDeleteDataTable}
+          />
+        </>
+      );
+    
+}
+
+export default Sales;
