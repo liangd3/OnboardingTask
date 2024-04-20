@@ -20,13 +20,22 @@ function CreateOrUpdatePopup({ open, onClose, onSubmit, data, formFields }) {
 
     const handleSubmit = async () => {
         const isUpdate = data !== undefined;
+        
+        const priceField = formFields.find(field => field.label === 'Price');
+
+        if (priceField) {
+          const priceCheck = /^\d+(\.\d{1,2})?$/;
+          if (!priceCheck.test(formData.price)) {
+              alert("Please enter a valid price!");
+              return false;
+        }};
 
         const response = await onSubmit(formData, isUpdate);
 
         if (response === true) {
           setFormData({});
           onClose();
-        }
+        } 
       };
 
 

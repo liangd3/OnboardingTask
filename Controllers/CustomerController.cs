@@ -17,48 +17,68 @@ namespace Onboarding_Task.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
+        public async Task<ActionResult<IEnumerable<Customer>>> AsyncGetCustomers()
         {
-            var customers = await _context.Customers.ToListAsync();
-            if (customers == null)
-            {
-                return NotFound("No customer data");
+            try {
+                var customers = await _context.Customers.ToListAsync();
+                if (customers == null)
+                {
+                    return NotFound("No customer data");
+                }
+                return customers;
             }
-            return customers;
+            catch (Exception ex) {
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Customer>> GetCustomer(int id)
+        public async Task<ActionResult<Customer>> AsyncGetCustomer(int? id)
         {
-            if (_context.Customers == null)
-            {
-                return NotFound("Entity set 'OnboardingTaskDbContext.Customers' is null.");
-            }
-            var customer = await _context.Customers.FindAsync(id);
+                if (id == null)
+                {
+                    return NotFound("id doesn't contain value");
+                }
 
-            if (customer == null)
-            {
-                return NotFound("No customer data for this id");
-            }
+            try {
+                if (_context.Customers == null)
+                {
+                    return NotFound("Entity set 'OnboardingTaskDbContext.Customers' is null.");
+                }
+                var customer = await _context.Customers.FindAsync(id);
 
-            return customer;
+                if (customer == null)
+                {
+                    return NotFound("No customer data for this id");
+                }
+
+                return customer;
+                }
+            catch (Exception ex) {
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
+            
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCustomer(int id, CreateCustomerRequest customerReq)
+        public async Task<IActionResult> AsyncPutCustomer(int? id, CreateCustomerRequest customerReq)
         {
-            if (customerReq == null)
-            {
-                return NotFound("Your request is null or invalid");
-            }
+               if (id == null)
+                {
+                    return NotFound("id doesn't contain value");
+                }
 
-            if (id != customerReq.Id)
-            {
-                return NotFound("No customer data for this id");
-            }
+            try {
+                if (customerReq == null)
+                {
+                    return NotFound("Your request is null or invalid");
+                }
 
-            try
-            {
+                if (id != customerReq.Id)
+                {
+                    return NotFound("No customer data for this id");
+                }
+            
                 _context.Entry(new Customer()
                 {
                     Id = customerReq.Id,
@@ -84,24 +104,24 @@ namespace Onboarding_Task.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult<Customer>> PostCustomer(CreateCustomerRequest customerReq)
+        public async Task<ActionResult<Customer>> AsyncPostCustomer(CreateCustomerRequest customerReq)
         {
-            if (customerReq == null)
-            {
-                return NotFound("Your request is null or invalid");
-            }
-
-            if (_context.Customers == null)
-            {
-                return Problem("Entity set 'OnboardingTaskDbContext.Customers' is null.");
-            }
-            
             try
             {
+                if (customerReq == null)
+                {
+                    return NotFound("Your request is null or invalid");
+                }
+
+                if (_context.Customers == null)
+                {
+                    return Problem("Entity set 'OnboardingTaskDbContext.Customers' is null.");
+                }
+            
                 var customer = new Customer() { Name = customerReq.Name, Address = customerReq.Address };
                 _context.Customers.Add(customer);
                 await _context.SaveChangesAsync();
-                return CreatedAtAction("GetCustomer", new { id = customer.Id }, customer);
+                return CreatedAtAction("AsyncGetCustomer", new { id = customer.Id }, customer);
             }
             catch (Exception ex)
             {
@@ -112,21 +132,25 @@ namespace Onboarding_Task.Controllers
 
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCustomer(int id)
+        public async Task<IActionResult> AsyncDeleteCustomer(int? id)
         {
-            if (_context.Customers == null)
+            if (id == null)
             {
-                return NotFound("Entity set 'OnboardingTaskDbContext.Customers' is null.");
+                return NotFound("id doesn't contain value");
             }
 
-            var customer = await _context.Customers.FindAsync(id);
-            if (customer == null)
-            {
-                return NotFound("No customer data for this id");
-            }
+            try {
+                if (_context.Customers == null)
+                {
+                    return NotFound("Entity set 'OnboardingTaskDbContext.Customers' is null.");
+                }
 
-            try 
-            { 
+                var customer = await _context.Customers.FindAsync(id);
+                if (customer == null)
+                {
+                    return NotFound("No customer data for this id");
+                }
+
                 _context.Customers.Remove(customer);
                 await _context.SaveChangesAsync();
                 return NoContent();
@@ -137,7 +161,7 @@ namespace Onboarding_Task.Controllers
             }
         }
 
-        private bool CustomerExists(int id)
+        private bool CustomerExists(int? id)
         {
             return (_context.Customers?.Any(e => e.Id == id)).GetValueOrDefault();
         }

@@ -18,49 +18,68 @@ namespace Onboarding_Task.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<Product>>> AsyncGetProducts()
         {
-            var products = await _context.Products.ToListAsync();
-            if (products == null)
-            {
-                return NotFound("No product data");
+            try {
+                var products = await _context.Products.ToListAsync();
+                if (products == null)
+                {
+                    return NotFound("No product data");
+                }
+                return products;
             }
-            return products;
+            catch (Exception ex) {
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        public async Task<ActionResult<Product>> AsyncGetProduct(int? id)
         {
-            if (_context.Products == null)
+            if (id == null)
             {
-                return NotFound();
-            }
-            var product = await _context.Products.FindAsync(id);
-
-            if (product == null)
-            {
-                return NotFound("No product data for this id");
+                return NotFound("id doesn't contain value");
             }
 
-            return product;
+            try {
+                if (_context.Products == null)
+                {
+                    return NotFound();
+                }
+                var product = await _context.Products.FindAsync(id);
+
+                if (product == null)
+                {
+                    return NotFound("No product data for this id");
+                }
+
+                return product;
+            }
+            catch (Exception ex) {
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(int id, CreateProductRequest productReq)
+        public async Task<IActionResult> AsyncPutProduct(int? id, CreateProductRequest productReq)
         {
-            if (productReq == null)
+            if (id == null)
             {
-                return NotFound("Your request is null or invalid");
+                return NotFound("id doesn't contain value");
             }
 
-            if (id != productReq.Id)
-            {
-                return NotFound("No product data for this id");
-            }
+            try {
+                if (productReq == null)
+                {
+                    return NotFound("Your request is null or invalid");
+                }
 
-            try
-            {
+                if (id != productReq.Id)
+                {
+                    return NotFound("No product data for this id");
+                }
+            
                 _context.Entry(new Product()
                 {
                     Id = productReq.Id,
@@ -85,20 +104,20 @@ namespace Onboarding_Task.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct(CreateProductRequest productReq)
+        public async Task<ActionResult<Product>> AsyncPostProduct(CreateProductRequest productReq)
         {
-            if (productReq == null)
-            {
-                return NotFound("Your request is null or invalid");
-            }
-
-            if (_context.Products == null)
-            {
-                return Problem("Entity set 'OnboardingTaskDbContext.Products' is null.");
-            }
-
             try
             {
+                if (productReq == null)
+                {
+                    return NotFound("Your request is null or invalid");
+                }
+
+                if (_context.Products == null)
+                {
+                    return Problem("Entity set 'OnboardingTaskDbContext.Products' is null.");
+                }
+            
                 var product = new Product()
                 {
                     Name = productReq.Name,
@@ -107,7 +126,7 @@ namespace Onboarding_Task.Controllers
                 _context.Products.Add(product);
                 await _context.SaveChangesAsync();
 
-                return CreatedAtAction("GetProduct", new { id = product.Id }, product);
+                return CreatedAtAction("AsyncGetProduct", new { id = product.Id }, product);
             }
             catch (Exception ex)
             {
@@ -116,21 +135,25 @@ namespace Onboarding_Task.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        public async Task<IActionResult> AsyncDeleteProduct(int? id)
         {
-            if (_context.Products == null)
+            if (id == null)
             {
-                return NotFound("Entity set 'OnboardingTaskDbContext.Customers' is null.");
+                return NotFound("id doesn't contain value");
             }
+            
+            try {
+                if (_context.Products == null)
+                {
+                    return NotFound("Entity set 'OnboardingTaskDbContext.Customers' is null.");
+                }
 
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
-            {
-                return NotFound("No product data for this id");
-            }
-
-            try 
-            { 
+                var product = await _context.Products.FindAsync(id);
+                if (product == null)
+                {
+                    return NotFound("No product data for this id");
+                }
+             
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
 
@@ -142,7 +165,7 @@ namespace Onboarding_Task.Controllers
             }
         }
 
-        private bool ProductExists(int id)
+        private bool ProductExists(int? id)
         {
             return (_context.Products?.Any(e => e.Id == id)).GetValueOrDefault();
         }

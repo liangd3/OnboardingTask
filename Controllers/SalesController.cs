@@ -18,79 +18,98 @@ namespace Onboarding_Task.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SalesResponse>>> GetSales()
+        public async Task<ActionResult<IEnumerable<SalesResponse>>> AsyncGetSales()
         {
-            if (_context.Sales == null)
-            {
-                return NotFound("No sale data");
-            }
-
-            var sales = await _context.Sales
-                .Include(s => s.Customer)
-                .Include(s => s.Product)
-                .Include(s => s.Store)
-                .Select(x => new SalesResponse()
+            try {
+                if (_context.Sales == null)
                 {
-                    CustomerId = x.CustomerId,
-                    CustomerName = x.Customer.Name,
-                    ProductId = x.ProductId,
-                    DateSold = x.DateSold,
-                    Id = x.Id,
-                    ProductName = x.Product.Name,
-                    StoreId = x.StoreId,
-                    StoreName = x.Store.Name,
-                }).ToListAsync();
+                    return NotFound("No sale data");
+                }
 
-            return sales;
+                var sales = await _context.Sales
+                    .Include(s => s.Customer)
+                    .Include(s => s.Product)
+                    .Include(s => s.Store)
+                    .Select(x => new SalesResponse()
+                    {
+                        CustomerId = x.CustomerId,
+                        CustomerName = x.Customer.Name,
+                        ProductId = x.ProductId,
+                        DateSold = x.DateSold,
+                        Id = x.Id,
+                        ProductName = x.Product.Name,
+                        StoreId = x.StoreId,
+                        StoreName = x.Store.Name,
+                    }).ToListAsync();
+
+                return sales;
+                }
+            catch (Exception ex) {
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<SalesResponse>> GetSales(int id)
+        public async Task<ActionResult<SalesResponse>> AsyncGetSales(int? id)
         {
-            if (_context.Sales == null)
+            if (id == null)
             {
-                return NotFound("No sale data");
+                return NotFound("id doesn't contain value");
             }
 
-            var salesEntity = await _context.Sales
-                .Include(s => s.Customer)
-                .Include(s => s.Product)
-                .Include(s => s.Store)
-                .Where(x => x.Id == id).FirstOrDefaultAsync();
+            try {
+                if (_context.Sales == null)
+                {
+                    return NotFound("No sale data");
+                }
 
-            if (salesEntity is null)
-                return NotFound("Entity set 'OnboardingTaskDbContext.Sales' is null.");
+                var salesEntity = await _context.Sales
+                    .Include(s => s.Customer)
+                    .Include(s => s.Product)
+                    .Include(s => s.Store)
+                    .Where(x => x.Id == id).FirstOrDefaultAsync();
 
-            var sales = new SalesResponse()
-            {
-                Id = salesEntity.Id,
-                CustomerId = salesEntity.CustomerId,
-                CustomerName = salesEntity.Customer.Name,
-                ProductId = salesEntity.ProductId,
-                ProductName = salesEntity.Product.Name,
-                StoreId = salesEntity.StoreId,
-                StoreName = salesEntity.Store.Name,
-                DateSold = salesEntity.DateSold,   
-            };
+                if (salesEntity is null)
+                    return NotFound("Entity set 'OnboardingTaskDbContext.Sales' is null.");
 
-            return sales;
+                var sales = new SalesResponse()
+                {
+                    Id = salesEntity.Id,
+                    CustomerId = salesEntity.CustomerId,
+                    CustomerName = salesEntity.Customer.Name,
+                    ProductId = salesEntity.ProductId,
+                    ProductName = salesEntity.Product.Name,
+                    StoreId = salesEntity.StoreId,
+                    StoreName = salesEntity.Store.Name,
+                    DateSold = salesEntity.DateSold,   
+                };
+
+                return sales;
+                }
+            catch (Exception ex) {
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutSales(int id, CreateSalesRequest salesReq)
+        public async Task<IActionResult> AsyncPutSales(int? id, CreateSalesRequest salesReq)
         {
-            if (salesReq == null)
+            if (id == null)
             {
-                return NotFound("Your request is null or invalid");
+                return NotFound("id doesn't contain value");
             }
 
-            if (id != salesReq.Id)
-            {
-                return BadRequest();
-            }
+            try {
+                if (salesReq == null)
+                {
+                    return NotFound("Your request is null or invalid");
+                }
 
-            try
-            {
+                if (id != salesReq.Id)
+                {
+                    return BadRequest();
+                }
+            
                 _context.Entry(new Sales()
                 {
                     Id = salesReq.Id,
@@ -117,20 +136,19 @@ namespace Onboarding_Task.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Sales>> PostSales(CreateSalesRequest salesReq)
+        public async Task<ActionResult<Sales>> AsyncPostSales(CreateSalesRequest salesReq)
         {
-            if (salesReq == null)
-            {
-                return NotFound("Your request is null or invalid");
-            }
+            try {
+                if (salesReq == null)
+                {
+                    return NotFound("Your request is null or invalid");
+                }
 
-            if (_context.Sales == null)
-            {
-                return Problem("Entity set 'OnboardingTaskDbContext.Sales' is null.");
-            }
-
-            try 
-            { 
+                if (_context.Sales == null)
+                {
+                    return Problem("Entity set 'OnboardingTaskDbContext.Sales' is null.");
+                }
+             
                 var sales = new Sales()
                 {
                     StoreId = salesReq.StoreId,
@@ -142,32 +160,34 @@ namespace Onboarding_Task.Controllers
                 _context.Sales.Add(sales);
                 await _context.SaveChangesAsync();
 
-                return CreatedAtAction("GetSales", new { id = sales.Id }, sales);
+                return CreatedAtAction("AsyncGetSales", new { id = sales.Id }, sales);
             }
-
             catch (Exception ex)
             {
                 return StatusCode(500, "Internal server error: " + ex.Message);
             }
-
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSales(int id)
+        public async Task<IActionResult> AsyncDeleteSales(int? id)
         {
-            if (_context.Sales == null)
+            if (id == null)
             {
-                return NotFound();
-            }
-            var sales = await _context.Sales.FindAsync(id);
-
-            if (sales == null)
-            {
-                return NotFound();
+                return NotFound("id doesn't contain value");
             }
 
-            try
-            {
+            try {
+                if (_context.Sales == null)
+                {
+                    return NotFound();
+                }
+                var sales = await _context.Sales.FindAsync(id);
+
+                if (sales == null)
+                {
+                    return NotFound();
+                }
+            
                 _context.Sales.Remove(sales);
                 await _context.SaveChangesAsync();
 
@@ -178,10 +198,9 @@ namespace Onboarding_Task.Controllers
             {
                 return StatusCode(500, "Internal server error: " + ex.Message);
             }
-
         }
 
-        private bool SalesExists(int id)
+        private bool SalesExists(int? id)
         {
             return (_context.Sales?.Any(e => e.Id == id)).GetValueOrDefault();
         }

@@ -19,8 +19,13 @@ function Store() {
       }, []);
     
     const loadStore = async () => {
+      try {
         const stores = await getAllStores();
         setDataTableData(stores);
+      }
+      catch (error) {
+          console.error("Issue with retrieving all stores:", error.message);
+        }
     };
     
     const toggleCreateUpdatePopup = () => {
@@ -32,37 +37,70 @@ function Store() {
         setOpenCreateUpdatePopup(true);
       };
 
-    const CreateUpdatePopupSubmit = async (formObject, isUpdate) => {
+    const onCreateUpdatePopupSubmit = async (formObject, isUpdate) => {
+      try {
         if (isUpdate) {
             const response = await editStore(formObject.id, formObject);
-            if (response === false) return false;
-            await loadStore();
-            return true;
+              if (response == false) {
+                return false;
+              } else {
+                await loadStore();
+                return true;
+              };
         } else {
             const response = await addStore(formObject);
-            if (response === false) return false;
-            await loadStore();
-            return true;
+              if (response == false) {
+                return false;
+              } else {
+              await loadStore();
+              return true;
+              };
         }
+      }
+      catch (error) {
+        console.error("Issue with submission:", error.message);
+      }
     };
 
     const onEditDataTable = async (id) => {
+      if (!id) {
+        console.error("id doesn't contain value")
+        return false;}
+
+      try {
         const store = await getStore(id);
         setDataToEdit(store);
         setOpenCreateUpdatePopup(true);
-      };
+      }
+      catch (error) {
+        console.error("Issue with editting:", error.message);
+      }
+    };
 
     const onDeleteDataTable = (id) => {
+      if (!id) {
+        console.error("id doesn't contain value")
+        return false;}
+
         setMakeSurePopup(true);
         setSelectedId(id);
       };
 
     const onDeleteConfirmed = async () => {
+      if (!selectedId) {
+        console.error("selectedId doesn't contain value")
+        return false;}
+
+      try {
         await deleteStore(selectedId);
         setMakeSurePopup(false);
         setSelectedId(null);
         await loadStore();
-      };
+      }
+      catch (error) {
+        console.error("Issue with deleting:", error.message);
+      }
+    };
 
     const dataTableColumns = [
         { header: 'Name', accessor: 'name' },
@@ -100,7 +138,7 @@ function Store() {
             onClose={toggleCreateUpdatePopup}
             data={dataToEdit}
             formFields={createUpdatePopupFields}
-            onSubmit={CreateUpdatePopupSubmit}
+            onSubmit={onCreateUpdatePopupSubmit}
           />
           <DataTable
             data={dataTableData}

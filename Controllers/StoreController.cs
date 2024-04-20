@@ -18,50 +18,69 @@ namespace Onboarding_Task.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Store>>> GetStores()
+        public async Task<ActionResult<IEnumerable<Store>>> AsyncGetStores()
         {
-            var stores = await _context.Stores.ToListAsync();
-            if (stores == null)
-            {
-                return NotFound("No store data");
+            try {
+                var stores = await _context.Stores.ToListAsync();
+                if (stores == null)
+                {
+                    return NotFound("No store data");
+                }
+                return stores;
             }
-            return stores;
+            catch (Exception ex) {
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Store>> GetStore(int id)
+        public async Task<ActionResult<Store>> AsyncGetStore(int? id)
         {
-            if (_context.Stores == null)
+            if (id == null)
             {
-                return NotFound();
-            }
-            var store = await _context.Stores.FindAsync(id);
-
-            if (store == null)
-            {
-                return NotFound("No store data for this id");
+                return NotFound("id doesn't contain value");
             }
 
-            return store;
+            try {
+                if (_context.Stores == null)
+                {
+                    return NotFound();
+                }
+                var store = await _context.Stores.FindAsync(id);
+
+                if (store == null)
+                {
+                    return NotFound("No store data for this id");
+                }
+
+                return store;
+            }
+            catch (Exception ex) {
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutStore(int id, CreateStoreRequest storeReq)
+        public async Task<IActionResult> AsyncPutStore(int? id, CreateStoreRequest storeReq)
         {
-            if (storeReq == null)
+            if (id == null)
             {
-                return NotFound("Your request is null or invalid");
+                return NotFound("id doesn't contain value");
             }
 
-            if (id != storeReq.Id)
-            {
-                return NotFound("No store data for this id");
-            }
+            try {
+                if (storeReq == null)
+                {
+                    return NotFound("Your request is null or invalid");
+                }
 
-            try
-            {
+                if (id != storeReq.Id)
+                {
+                    return NotFound("No store data for this id");
+                }
+
                 _context.Entry(new Store()
                 {
                     Address = storeReq.Address,
@@ -87,20 +106,20 @@ namespace Onboarding_Task.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult<Store>> PostStore(CreateStoreRequest storeReq)
+        public async Task<ActionResult<Store>> AsyncPostStore(CreateStoreRequest storeReq)
         {
-            if (storeReq == null)
-            {
-                return NotFound("Your request is null or invalid");
-            }
-
-            if (_context.Stores == null)
-            {
-                return Problem("Entity set 'OnboardingTaskDbContext.Stores' is null.");
-            }
-
             try 
             { 
+                if (storeReq == null)
+                {
+                    return NotFound("Your request is null or invalid");
+                }
+
+                if (_context.Stores == null)
+                {
+                    return Problem("Entity set 'OnboardingTaskDbContext.Stores' is null.");
+                }
+
                 var store = new Store()
                 {
                     Address = storeReq.Address,
@@ -109,7 +128,7 @@ namespace Onboarding_Task.Controllers
                 _context.Stores.Add(store);
                 await _context.SaveChangesAsync();
 
-                return CreatedAtAction("GetStore", new { id = store.Id }, store);
+                return CreatedAtAction("AsyncGetStore", new { id = store.Id }, store);
             }
 
             catch (Exception ex)
@@ -120,20 +139,26 @@ namespace Onboarding_Task.Controllers
 
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteStore(int id)
+        public async Task<IActionResult> AsyncDeleteStore(int? id)
         {
-            if (_context.Stores == null)
+            if (id == null)
             {
-                return NotFound("Entity set 'OnboardingTaskDbContext.Stores' is null.");
-            }
-            var store = await _context.Stores.FindAsync(id);
-            if (store == null)
-            {
-                return NotFound("No store data for this id");
+                return NotFound("id doesn't contain value");
             }
 
             try 
             { 
+                if (_context.Stores == null)
+                {
+                    return NotFound("Entity set 'OnboardingTaskDbContext.Stores' is null.");
+                }
+
+                var store = await _context.Stores.FindAsync(id);
+                if (store == null)
+                {
+                    return NotFound("No store data for this id");
+                }
+
                 _context.Stores.Remove(store);
                 await _context.SaveChangesAsync();
 
@@ -146,7 +171,7 @@ namespace Onboarding_Task.Controllers
             }
         }
 
-        private bool StoreExists(int id)
+        private bool StoreExists(int? id)
         {
             return (_context.Stores?.Any(e => e.Id == id)).GetValueOrDefault();
         }

@@ -27,6 +27,7 @@ function Sales() {
 
 
     const loadDropdownSources = async () => {
+      try {
         const customers = await getAllCustomer();
         const products = await getAllProducts();
         const stores = await getAllStores();
@@ -34,18 +35,39 @@ function Sales() {
         setCustomerDropdownSource(formatDropdownSource(customers));
         setProductDropdownSource(formatDropdownSource(products));
         setStoreDropdownSource(formatDropdownSource(stores));
+      }
+      catch (error) {
+          console.error("Issue with retrieving relative data:", error.message);
+        }
     };
 
 
-    const formatDropdownSource = (items) =>
-        items.map((item) => ({
-        key: item.id,
-        text: item.name,
-        value: item.id,
-        }));
+    const formatDropdownSource = (items) => {
+        if (!items) {
+          console.error("items doesn't contain anything");
+          return [];
+        }
+
+        try {
+          return items.map((item) => ({
+          key: item.id,
+          text: item.name,
+          value: item.id,
+          }));
+        }
+        catch (error) {
+            console.error("Issue with retrieving relative data:", error.message);
+          }
+    };
         
     const loadSale = async () => {
+      try {
         const sales = await getAllSales();
+        
+        if (!sales) {
+          console.error("sales doesn't contain anything");
+          return [];
+        }
 
         const tableData = sales.map((s) => ({
           ...s,
@@ -55,7 +77,11 @@ function Sales() {
           dateSold: s.dateSold.split('T')[0],
         }));
         setDataTableData(tableData);
-      };
+      }
+      catch (error) {
+          console.error("Issue with retrieving sales:", error.message);
+        }
+    };
     
     const toggleCreateUpdatePopup = () => {
         setOpenCreateUpdatePopup(!openCreateUpdatePopup);
@@ -66,37 +92,70 @@ function Sales() {
         setOpenCreateUpdatePopup(true);
       };
 
-    const CreateUpdatePopupSubmit = async (formObject, isUpdate) => {
+    const onCreateUpdatePopupSubmit = async (formObject, isUpdate) => {
+      try {
         if (isUpdate) {
             const response = await editSale(formObject.id, formObject);
-            if (response === false) return false;
-            await loadProduct();
-            return true;
+            if (response == false) {
+              return false;
+            } else {
+              await loadProduct();
+              return true;
+            };
         } else {
             const response = await addSale(formObject);
-            if (response === false) return false;
-            await loadSale();
-            return true;
+              if (response == false) {
+                return false;
+              } else {
+              await loadSale();
+              return true;
+              };
         }
+      }
+      catch (error) {
+        console.error("Issue with submission:", error.message);
+      }
     };
 
     const onEditDataTable = async (id) => {
+      if (!id) {
+        console.error("id doesn't contain value")
+        return false;}
+
+      try {
         const sale = await getSale(id);
         sale.dateSold = sale.dateSold.split('T')[0];
         setDataToEdit(sale);
         setOpenCreateUpdatePopup(true);
+      }
+      catch (error) {
+        console.error("Issue with editting:", error.message);
+      }
       };
 
     const onDeleteDataTable = (id) => {
+      if (!id) {
+        console.error("id doesn't contain value")
+        return false;}
+
         setMakeSurePopup(true);
         setSelectedId(id);
       };
 
     const onDeleteConfirmed = async () => {
+      if (!selectedId) {
+        console.error("selectedId doesn't contain value")
+        return false;}
+
+      try {
         await deleteSale(selectedId);
         setMakeSurePopup(false);
         setSelectedId(null);
         await loadSale();
+      }
+      catch (error) {
+        console.error("Issue with deleting:", error.message);
+      }
       };
 
     const dataTableColumns = [
@@ -147,7 +206,7 @@ function Sales() {
             onClose={toggleCreateUpdatePopup}
             data={dataToEdit}
             formFields={createUpdatePopupFields}
-            onSubmit={CreateUpdatePopupSubmit}
+            onSubmit={onCreateUpdatePopupSubmit}
           />
           <DataTable
             data={dataTableData}

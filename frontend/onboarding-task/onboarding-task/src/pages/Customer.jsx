@@ -18,9 +18,15 @@ function Customer() {
         loadCustomer();
       }, []);
     
-    async function loadCustomer() {
+
+    const loadCustomer = async () => {
+      try {
         const customers = await getAllCustomer();
         setDataTableData(customers);
+        }
+      catch (error) {
+          console.error("Issue with retrieving all customers:", error.message);
+        }
     }
     
     const toggleCreateUpdatePopup = () => {
@@ -32,36 +38,69 @@ function Customer() {
         setOpenCreateUpdatePopup(true);
       };
 
-    const CreateUpdatePopupSubmit = async (formObject, isUpdate) => {
-        if (isUpdate) {
-            const response = await editCustomer(formObject.id, formObject);
-            if (response === false) return false;
-            await loadCustomer();
-            return true;
-        } else {
-            const response = await addCustomer(formObject);
-            if (response === false) return false;
-            await loadCustomer();
-            return true;
-        }
+    const onCreateUpdatePopupSubmit = async (formObject, isUpdate) => {
+      try {
+          if (isUpdate) {
+              const response = await editCustomer(formObject.id, formObject);
+              if (response == false) {
+                return false;
+              } else {
+                await loadCustomer();
+                return true;
+              };
+          } else {
+              const response = await addCustomer(formObject);
+              if (response == false) {
+                return false;
+              } else {
+              await loadCustomer();
+              return true;
+              };
+          }
+      }
+      catch (error) {
+        console.error("Issue with submission:", error.message);
+      }
     };
 
     const onEditDataTable = async (id) => {
+      if (!id) {
+        console.error("id doesn't contain value")
+        return false;}
+
+      try {
         const customer = await getCustomer(id);
         setDataToEdit(customer);
         setOpenCreateUpdatePopup(true);
+      }
+      catch (error) {
+        console.error("Issue with editting:", error.message);
+      }
       };
 
     const onDeleteDataTable = (id) => {
+      if (!id) {
+        console.error("id doesn't contain value")
+        return false;}
+
         setMakeSurePopup(true);
         setSelectedId(id);
       };
 
     const onDeleteConfirmed = async () => {
-        await deleteCustomer(selectedId);
-        setMakeSurePopup(false);
-        setSelectedId(null);
-        await loadCustomer();
+      if (!selectedId) {
+        console.error("selectedId doesn't contain value")
+        return false;}
+
+        try {
+          await deleteCustomer(selectedId);
+          setMakeSurePopup(false);
+          setSelectedId(null);
+          await loadCustomer();
+        }
+        catch (error) {
+          console.error("Issue with deleting:", error.message);
+        }
       };
 
     const dataTableColumns = [
@@ -100,7 +139,7 @@ function Customer() {
             onClose={toggleCreateUpdatePopup}
             data={dataToEdit}
             formFields={createUpdatePopupFields}
-            onSubmit={CreateUpdatePopupSubmit}
+            onSubmit={onCreateUpdatePopupSubmit}
           />
           <DataTable
             data={dataTableData}

@@ -11,8 +11,6 @@ namespace Onboarding_Task.ViewModels
         public string Name { get; set; }
 
         [Required(ErrorMessage = "The price is required.")]
-        [Range(0.01, double.MaxValue, ErrorMessage = "The price must be greater than 0.")]
-        [DataType(DataType.Currency)]
         [Display(Name = "Price")]
         public double Price { get; set; }
     }

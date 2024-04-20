@@ -19,8 +19,13 @@ function Product() {
       }, []);
     
     const loadProduct = async () => {
+      try {
         const products = await getAllProducts();
         setDataTableData(products);
+      }
+      catch (error) {
+          console.error("Issue with retrieving all products:", error.message);
+        }
     };
     
     const toggleCreateUpdatePopup = () => {
@@ -32,36 +37,69 @@ function Product() {
         setOpenCreateUpdatePopup(true);
       };
 
-    const CreateUpdatePopupSubmit = async (formObject, isUpdate) => {
+    const onCreateUpdatePopupSubmit = async (formObject, isUpdate) => {
+      try {
         if (isUpdate) {
             const response = await editProduct(formObject.id, formObject);
-            if (response === false) return false;
-            await loadProduct();
-            return true;
+              if (response == false) {
+                return false;
+              } else {
+                await loadProduct();
+                return true;
+              };
         } else {
             const response = await addProduct(formObject);
-            if (response === false) return false;
-            await loadProduct();
-            return true;
+              if (response == false) {
+                return false;
+              } else {
+              await loadProduct();
+              return true;
+              };
         }
+      }
+      catch (error) {
+        console.error("Issue with submission:", error.message);
+      }
     };
 
     const onEditDataTable = async (id) => {
+      if (!id) {
+        console.error("id doesn't contain value")
+        return false;}
+
+      try {
         const product = await getProduct(id);
         setDataToEdit(product);
         setOpenCreateUpdatePopup(true);
-      };
+      }
+      catch (error) {
+        console.error("Issue with editting:", error.message);
+      }
+    };
 
     const onDeleteDataTable = (id) => {
+      if (!id) {
+        console.error("id doesn't contain value")
+        return false;}
+
         setMakeSurePopup(true);
         setSelectedId(id);
       };
 
     const onDeleteConfirmed = async () => {
-        await deleteProduct(selectedId);
-        setMakeSurePopup(false);
-        setSelectedId(null);
-        await loadProduct();
+      if (!selectedId) {
+        console.error("selectedId doesn't contain value")
+        return false;}
+
+        try {
+          await deleteProduct(selectedId);
+          setMakeSurePopup(false);
+          setSelectedId(null);
+          await loadProduct();
+        }
+        catch (error) {
+          console.error("Issue with deleting:", error.message);
+        }
       };
 
     const dataTableColumns = [
@@ -100,7 +138,7 @@ function Product() {
             onClose={toggleCreateUpdatePopup}
             data={dataToEdit}
             formFields={createUpdatePopupFields}
-            onSubmit={CreateUpdatePopupSubmit}
+            onSubmit={onCreateUpdatePopupSubmit}
           />
           <DataTable
             data={dataTableData}
